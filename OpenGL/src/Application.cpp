@@ -32,6 +32,27 @@ int main(void)
 
     std::cout << glGetString(GL_VERSION) << std::endl;
 
+    // Vertex Data for the Triangle
+    float positions[6] = {
+        -0.5f, -0.5f,
+         0.0f,  0.5f,
+         0.5f, -0.5f
+    };
+
+    // 1. Create a buffer, 
+    // 2. Give it a number, 
+    // 3. Bind and tell what kind of buffer it is, 
+    // 4. finally tell what kind of data is in it
+    unsigned int buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
+
+    // Enables the Vertex Array
+    glEnableVertexAttribArray(0);
+    // Defines the attributes of the Array to tell OpenGL what to do with the points
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -39,12 +60,8 @@ int main(void)
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Legacy OpenGL Code (Dump Later)
-        glBegin(GL_TRIANGLES);
-            glVertex2f(-0.5f, -0.5f);
-            glVertex2f( 0.0f,  0.5f);
-            glVertex2f( 0.5f, -0.5f);
-        glEnd();
+        // Define the structure of the array and tell it to draw a traingle
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         /* Swap front and back buffers (and) Poll for and process events */
         glfwSwapBuffers(window);
