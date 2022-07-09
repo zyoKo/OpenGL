@@ -15,6 +15,19 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
     glCompileShader(id);
 
     // TODO: Error handling
+    int result;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+    if (result == GL_FALSE)
+    {
+        int length;
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+        char* message = (char*)alloca(length * sizeof(char));
+        glGetShaderInfoLog(id, length, &length, message);
+        std::cout << "Failed to compiler" << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << "shader!" << std::endl;
+        std::cout << "Message: " << message << std::endl;
+        glDeleteShader(id);
+        return 0;
+    }
 
     return id;
 }
@@ -29,6 +42,11 @@ static int CreateShaders(const std::string& vertexShader, const std::string& fra
     glAttachShader(program, fs);
     glLinkProgram(program);
     glValidateProgram(program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    return program;
 }
 
 int main(void)
