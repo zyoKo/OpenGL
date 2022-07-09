@@ -2,6 +2,35 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+static unsigned int CompileShader(unsigned int type, const std::string& source)
+{
+    // (basically creating a shader object) Giving an id to the Shader we are going to create
+    unsigned int id = glCreateShader(type);
+    const char* src = source.c_str();
+
+    // Putting/Replacing the shader source in shader object
+    glShaderSource(id, 1, &src, nullptr);
+
+    // Compiling the shader
+    glCompileShader(id);
+
+    // TODO: Error handling
+
+    return id;
+}
+
+static int CreateShaders(const std::string& vertexShader, const std::string& fragmentShader)
+{
+    unsigned int program = glCreateProgram();
+    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+    
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+    glValidateProgram(program);
+}
+
 int main(void)
 {
     GLFWwindow* window;
@@ -14,7 +43,7 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     // Legacy OpenGL won't work in CORE_PROFILE but will work in COMPAT_PROFILE
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
