@@ -14,7 +14,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
     // Compiling the shader
     glCompileShader(id);
 
-    // TODO: Error handling
+    // Error handling while compiling Shaders
     int result;
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
     if (result == GL_FALSE)
@@ -57,11 +57,12 @@ int main(void)
     if (!glfwInit())
         return -1;
 
-    // Sets OpenGL version to 3.3
+    /* Sets OpenGL version to 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     // Legacy OpenGL won't work in CORE_PROFILE but will work in COMPAT_PROFILE
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    */
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
@@ -99,6 +100,30 @@ int main(void)
     glEnableVertexAttribArray(0);
     // Defines the attributes of the Array to tell OpenGL what to do with the points
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+
+    // Writing our own shader
+    std::string vertexShader =
+        "#version 330 core\n"
+        "\n"
+        "layout(location = 0) in vec4 positions;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = positions;\n"
+        "}\n";
+    
+    std::string fragmentShader =
+        "#version 330 core\n"
+        "\n"
+        "layout(location = 0) out vec4 color;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+        "}\n";
+
+    unsigned int shader = CreateShaders(vertexShader, fragmentShader);
+    glUseProgram(shader);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
