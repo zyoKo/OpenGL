@@ -63,7 +63,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         char* message = (char*)alloca(length * sizeof(char));
         glGetShaderInfoLog(id, length, &length, message);
-        std::cout << "Failed to compiler" << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << "shader!" << std::endl;
+        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!" << std::endl;
         std::cout << "Message: " << message << std::endl;
         glDeleteShader(id);
         return 0;
@@ -81,6 +81,22 @@ static int CreateShaders(const std::string& vertexShader, const std::string& fra
     glAttachShader(program, vs);
     glAttachShader(program, fs);
     glLinkProgram(program);
+
+    // Error handling while linking multiple shaders
+    int result;
+    glGetProgramiv(program, GL_LINK_STATUS, &result);
+    if (result == GL_FALSE)
+    {
+        int length;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+        char* message = (char*)alloca(length * sizeof(char));
+        glGetProgramInfoLog(program, length, &length, message);
+        std::cout << "Failed to link program!"<< std::endl;
+        std::cout << "Message: " << message << std::endl;
+        glDeleteProgram(program);
+        return 0;
+    }
+
     glValidateProgram(program);
 
     glDeleteShader(vs);
