@@ -67,7 +67,7 @@ static ShaderProgramSource ParseShader(const std::string& filepath)
 static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
     // (basically creating a shader object) Giving an id to the Shader we are going to create
-    unsigned int id = glCreateShader(type);
+    GLCall(unsigned int id = glCreateShader(type));
     const char* src = source.c_str();
 
     // Putting/Replacing the shader source in shader object
@@ -96,7 +96,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 
 static int CreateShaders(const std::string& vertexShader, const std::string& fragmentShader)
 {
-    unsigned int program = glCreateProgram();
+    GLCall(unsigned int program = glCreateProgram());
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
     
@@ -134,13 +134,15 @@ int main(void)
     /* Initialize the library */
     if (!glfwInit())
         return -1;
-
-    /* Sets OpenGL version to 3.3
+    
+    // The Compatibility Profile creates a Vertex Array Object for us by default and is adressed with a '0'
+    // where as, the Core Profile does not and we need to explicitly create a VAO by ourselves or else we
+    // won't see the triangle
+    //Sets OpenGL version to 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     // Legacy OpenGL won't work in CORE_PROFILE but will work in COMPAT_PROFILE
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-    */
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
@@ -152,6 +154,9 @@ int main(void)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+
+    // Sync the refresh rate of the monitor with the rendering loop
+    glfwSwapInterval(1);
 
     if (glewInit() != GLEW_OK)
         std::cout << "Error!" << std::endl;
@@ -171,6 +176,11 @@ int main(void)
         2, 3, 0
     };
 
+    // Creating a Vertex Array Object(VAO), because using CORE_PROFILE now
+    unsigned int vao;
+    GLCall(glCreateVertexArrays(1, &vao));
+    GLCall(glBindVertexArray(vao));
+
     // 1. Create a buffer, 
     // 2. Give it a number, 
     // 3. Bind and tell what kind of buffer it is, 
@@ -178,7 +188,7 @@ int main(void)
     unsigned int buffer;
     GLCall(glGenBuffers(1, &buffer));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
+    GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
 
     // Enables the Vertex Array
     GLCall(glEnableVertexAttribArray(0));
@@ -194,15 +204,48 @@ int main(void)
     unsigned int shader = CreateShaders(source.VertexSource, source.FragmentSource);
     GLCall(glUseProgram(shader));
 
+    GLCall(int location = glGetUniformLocation(shader, "u_Color"));
+    ASSERT(location != -1);
+    GLCall(glUniform4f(location, 0.2f, 0.5f, 0.8f, 1.0f));
+
+    // Unbinding everything
+    GLCall(glBindVertexArray(0));
+    GLCall(glUseProgram(0));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
+    float r = 0.0f;
+    float increment = 0.01f;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-        GLCall(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
+        GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
         GLCall(glClear(GL_COLOR_BUFFER_BIT));
+
+        // All the binding need to be done before the traingle is rendered //
+        GLCall(glUseProgram(shader));
+        GLCall(glUniform4f(location, r, 0.5f, 0.8f, 1.0f));
+
+        // No need to bind the vertex buffer(1) or do the set VertexAttribePointer(2 & 3) because we are using VAOs
+        // But we do need to bind the index buffer
+        GLCall(glBindVertexArray(vao));
+        GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo)); // binding index buffer
+        /*
+        1. GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
+        2. GLCall(glEnableVertexAttribArray(0));
+        3. GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));*/
+        // --------------------------------------------------------------- //
 
         // Using Indices to and Index Buffer Obj to draw 2 triangles which looks like a square
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+        if (r > 1.0f)
+            increment = -0.01f;
+        else if (r < 0.0f)
+            increment = 0.01f;
+
+        r += increment;
 
         /* Swap front and back buffers (and) Poll for and process events */
         GLCall(glfwSwapBuffers(window));
